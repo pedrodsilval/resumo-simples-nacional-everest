@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+    /* Fontes e cores conforme o Manual da Marca — Everest Contabilidade v1.1 */
+    @font-face { font-family: "SatoshiBlack"; src: url("{{ font_satoshi_black }}"); font-weight: normal; }
+    @font-face { font-family: "SatoshiBold"; src: url("{{ font_satoshi_bold }}"); font-weight: normal; }
+    @font-face { font-family: "SatoshiMedium"; src: url("{{ font_satoshi_medium }}"); font-weight: normal; }
+    @font-face { font-family: "InterRegular"; src: url("{{ font_inter_regular }}"); font-weight: normal; }
+    @font-face { font-family: "InterSemiBold"; src: url("{{ font_inter_semibold }}"); font-weight: normal; }
+
+    @page {
+        size: A4;
+        margin: 1.4cm 1.6cm 1.4cm 1.6cm;
+    }
+    body {
+        font-family: "InterRegular";
+        color: #1A4FAD;
+        font-size: 10pt;
+    }
+    .logo-cell {
+        width: 10cm;
+        vertical-align: middle;
+    }
+    .logo-cell img {
+        width: 136px;
+        height: 44px;
+    }
+    .title-cell {
+        width: 7.8cm;
+        text-align: right;
+        vertical-align: middle;
+    }
+    .title-cell .titulo {
+        font-family: "SatoshiBlack";
+        font-size: 13pt;
+        color: #1A4FAD;
+    }
+    .title-cell .competencia {
+        font-family: "InterRegular";
+        font-size: 10pt;
+        color: #0D1B3E;
+    }
+    .header-rule {
+        border-bottom: 2px solid #1A4FAD;
+        margin-top: 4px;
+        margin-bottom: 10px;
+    }
+    .cliente-table {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .cliente-table td {
+        font-family: "InterRegular";
+        font-size: 9.5pt;
+        padding: 1px 0;
+        color: #0D1B3E;
+    }
+    .cliente-table td.valor {
+        font-family: "InterSemiBold";
+        color: #1A4FAD;
+    }
+    .cliente-label {
+        color: #666680;
+        width: 90px;
+    }
+    .hero-table {
+        width: 17.8cm;
+        margin-bottom: 14px;
+        border-collapse: collapse;
+    }
+    .hero-cell-left {
+        width: 10.68cm;
+        background-color: #1A4FAD;
+        padding: 10px 16px;
+    }
+    .hero-cell-right {
+        width: 7.12cm;
+        background-color: #1A4FAD;
+        padding: 10px 16px;
+        text-align: right;
+    }
+    .hero-label {
+        font-family: "InterRegular";
+        font-size: 9.5pt;
+        color: #FFFFFF;
+        text-transform: uppercase;
+    }
+    .hero-valor {
+        font-family: "SatoshiBlack";
+        font-size: 24pt;
+        color: #FFFFFF;
+    }
+    .hero-aliquota-label {
+        font-family: "InterRegular";
+        font-size: 9pt;
+        color: #FFFFFF;
+    }
+    .hero-aliquota-valor {
+        font-family: "SatoshiBlack";
+        font-size: 18pt;
+        color: #D4AF37;
+    }
+    .info-table {
+        width: 17.8cm;
+        margin-bottom: 8px;
+        border-collapse: collapse;
+    }
+    .info-box {
+        width: 5.7cm;
+        border: 1px solid #d8d8e8;
+        padding: 6px 10px;
+    }
+    .info-box-spacer {
+        width: 0.35cm;
+    }
+    .info-box-label {
+        font-family: "InterRegular";
+        font-size: 8pt;
+        color: #0D1B3E;
+        text-transform: uppercase;
+    }
+    .info-box-valor {
+        font-family: "SatoshiBold";
+        font-size: 12pt;
+        color: #1A4FAD;
+    }
+    h2.secao {
+        font-family: "SatoshiBold";
+        font-size: 11pt;
+        color: #1A4FAD;
+        border-bottom: 1px solid #d8d8e8;
+        padding-bottom: 2px;
+        margin-top: 10px;
+        margin-bottom: 4px;
+    }
+    table.dados {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 4px;
+    }
+    table.dados th {
+        background-color: #EEF2FB;
+        color: #1A4FAD;
+        font-family: "InterSemiBold";
+        font-size: 8.5pt;
+        text-align: left;
+        padding: 4px 6px;
+        border-bottom: 1px solid #c8c8dc;
+    }
+    table.dados td {
+        font-family: "InterRegular";
+        font-size: 9pt;
+        color: #0D1B3E;
+        padding: 4px 6px;
+        border-bottom: 1px solid #ececf4;
+    }
+    table.dados td.num, table.dados th.num {
+        text-align: right;
+    }
+    table.dados tr, .hero-table, .info-table {
+        page-break-inside: avoid;
+    }
+    .aliquota-destaque {
+        font-family: "SatoshiBold";
+        color: #1A4FAD;
+    }
+    .tendencia-alta {
+        font-family: "InterSemiBold";
+        color: #D94F2B;
+    }
+    .tendencia-baixa {
+        font-family: "InterSemiBold";
+        color: #0D1B3E;
+    }
+    .fator-r-nota {
+        font-family: "InterRegular";
+        font-size: 8.5pt;
+        color: #0D1B3E;
+        margin-top: 4px;
+    }
+    .disclaimer {
+        font-family: "InterRegular";
+        font-size: 8pt;
+        color: #6b6b85;
+        margin-top: 10px;
+        line-height: 1.35;
+    }
+    .footer-rule {
+        border-top: 2px solid #1A4FAD;
+        margin-top: 4px;
+    }
+    .footer-texto {
+        font-family: "InterRegular";
+        text-align: center;
+        font-size: 8pt;
+        color: #0D1B3E;
+        padding-top: 6px;
+    }
+</style>
+</head>
+<body>
+
+<table class="cliente-table">
+<tr>
+    <td class="logo-cell">
+        <img src="data:image/png;base64,{{ logo_base64 }}" width="136" height="44" />
+    </td>
+    <td class="title-cell">
+        <div class="titulo">Resumo do Simples Nacional</div>
+        <div class="competencia">Competência: {{ periodo_extenso }}</div>
+    </td>
+</tr>
+</table>
+<div class="header-rule"></div>
+
+<table class="cliente-table">
+<tr><td class="cliente-label">Empresa</td><td class="valor">{{ empresa }}</td></tr>
+<tr><td class="cliente-label">CNPJ</td><td class="valor">{{ cnpj }}</td></tr>
+</table>
+
+<table class="hero-table">
+<tr>
+    <td class="hero-cell-left">
+        <div class="hero-label">Simples Nacional a recolher</div>
+        <div class="hero-valor">{{ total_a_recolher_fmt }}</div>
+    </td>
+    <td class="hero-cell-right">
+        <div class="hero-aliquota-label">Alíquota efetiva do período</div>
+        <div class="hero-aliquota-valor">{{ aliquota_media_fmt }}</div>
+    </td>
+</tr>
+</table>
+
+<table class="info-table">
+<tr>
+    <td class="info-box">
+        <div class="info-box-label">Receita bruta do período</div>
+        <div class="info-box-valor">{{ rpa_competencia_fmt }}</div>
+    </td>
+    <td class="info-box-spacer"></td>
+    <td class="info-box">
+        <div class="info-box-label">Receita acumulada 12 meses</div>
+        <div class="info-box-valor">{{ rbt12_fmt }}</div>
+    </td>
+    <td class="info-box-spacer"></td>
+    <td class="info-box">
+        <div class="info-box-label">Faixa de enquadramento</div>
+        <div class="info-box-valor" style="font-size:9.5pt;">{{ faixa_enquadramento }}</div>
+    </td>
+</tr>
+</table>
+
+<h2 class="secao">Detalhamento por Anexo</h2>
+<table class="dados">
+<tr>
+    <th>Anexo</th>
+    <th class="num">Receita tributada</th>
+    <th class="num">Alíquota efetiva</th>
+    <th class="num">Valor do Simples</th>
+    {% if mostrar_proximo_periodo %}<th class="num">Próx. período</th>{% endif %}
+</tr>
+{% for a in anexos %}
+<tr>
+    <td>{{ a.nome }}</td>
+    <td class="num">{{ a.receita_tributada_fmt }}</td>
+    <td class="num aliquota-destaque">{{ a.aliquota_efetiva_fmt }}</td>
+    <td class="num">{{ a.simples_nacional_total_fmt }}</td>
+    {% if mostrar_proximo_periodo %}
+    <td class="num {{ a.tendencia_classe }}">{{ a.aliquota_proximo_fmt }}</td>
+    {% endif %}
+</tr>
+{% endfor %}
+</table>
+{% if fator_r_nota %}<div class="fator-r-nota">{{ fator_r_nota }}</div>{% endif %}
+
+<h2 class="secao">Valor por Tributo</h2>
+<table class="dados">
+<tr>
+    <th>Tributo</th>
+    <th class="num">% da alíquota</th>
+    <th class="num">Valor</th>
+</tr>
+{% for t in tributos %}
+<tr>
+    <td>{{ t.nome }}</td>
+    <td class="num aliquota-destaque">{{ t.percentual_fmt }}</td>
+    <td class="num">{{ t.valor_fmt }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<div class="disclaimer">
+Resumo gerado automaticamente a partir da apuração oficial do Simples Nacional (PGDAS-D) referente à competência
+{{ periodo_extenso }}. Em caso de dúvidas sobre os valores apresentados, entre em contato com a equipe da Everest.
+</div>
+
+<div class="footer-rule"></div>
+<div class="footer-texto">
+www.everestcontabilidade.com &nbsp;|&nbsp; (71) 4141-1675 &nbsp;|&nbsp; atendimento@everestcontabilidade.com
+</div>
+
+</body>
+</html>

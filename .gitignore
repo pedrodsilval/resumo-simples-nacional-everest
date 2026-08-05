@@ -1,0 +1,19 @@
+# Dados reais de clientes (CNPJ, receita, folha de pagamento) -- nunca commitar
+samples/
+output/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Segredos (senha do app, se/quando adicionarmos)
+.streamlit/secrets.toml
+
+# Configuração local do Claude Code (específica desta máquina/sessão)
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
