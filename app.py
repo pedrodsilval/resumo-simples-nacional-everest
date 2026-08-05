@@ -41,10 +41,21 @@ if arquivo is not None:
         caminho_tmp = tmp.name
 
     try:
-        apuracao = parse_relatorio(caminho_tmp)
-    except ValueError as erro:
-        st.error(str(erro))
-    else:
+        try:
+            apuracao = parse_relatorio(caminho_tmp)
+        except ValueError as erro:
+            st.error(str(erro))
+            apuracao = None
+        except Exception:
+            st.error(
+                "Não consegui ler este arquivo. Confirme se é um PDF de apuração do "
+                "Simples Nacional válido, não corrompido e sem senha."
+            )
+            apuracao = None
+    finally:
+        Path(caminho_tmp).unlink(missing_ok=True)
+
+    if apuracao is not None:
         st.success(f"Relatório de **{apuracao.empresa}** (competência {apuracao.periodo}) lido com sucesso.")
 
         col1, col2, col3 = st.columns(3)
@@ -88,7 +99,5 @@ if arquivo is not None:
             mime="application/pdf",
             type="primary",
         )
-
-    Path(caminho_tmp).unlink(missing_ok=True)
 else:
     st.info("Nenhum arquivo selecionado ainda.")

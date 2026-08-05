@@ -154,13 +154,27 @@ def render_html(apuracao: ApuracaoSimplesNacional) -> str:
     return template.render(**build_context(apuracao))
 
 
+def _limpar_temporarios_xhtml2pdf() -> None:
+    """Apaga os arquivos temporários que o xhtml2pdf cria a cada @font-face e
+    imagem processados (ver `_patch_xhtml2pdf_windows_tempfile_bug`, que usa
+    delete=False). Sem isso, um servidor rodando continuamente acumula ~6
+    arquivos temporários por PDF gerado, para sempre.
+    """
+    for tmp_file in _x2p_files.files_tmp.files:
+        Path(tmp_file.name).unlink(missing_ok=True)
+    _x2p_files.files_tmp.files.clear()
+
+
 def gerar_pdf_bytes(apuracao: ApuracaoSimplesNacional) -> bytes:
     html = render_html(apuracao)
     buffer = io.BytesIO()
-    resultado = pisa.CreatePDF(html, dest=buffer)
-    if resultado.err:
-        raise RuntimeError("Falha ao gerar o PDF do resumo.")
-    return buffer.getvalue()
+    try:
+        resultado = pisa.CreatePDF(html, dest=buffer)
+        if resultado.err:
+            raise RuntimeError("Falha ao gerar o PDF do resumo.")
+        return buffer.getvalue()
+    finally:
+        _limpar_temporarios_xhtml2pdf()
 
 
 def gerar_pdf_arquivo(apuracao: ApuracaoSimplesNacional, output_path: str) -> None:
