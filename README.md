@@ -140,7 +140,15 @@ município):
 - [`app.py`](app.py) — interface Streamlit: upload do PDF, prévia dos dados extraídos
   na tela e botão de download do resumo em PDF.
 
-**Como rodar:**
+**App hospedado:** https://everest-simples-nacional.streamlit.app — qualquer pessoa com
+o link acessa, sem login. Deploy automático via Streamlit Community Cloud a partir do
+repositório [`pedrodsilval/resumo-simples-nacional-everest`](https://github.com/pedrodsilval/resumo-simples-nacional-everest)
+(público — sem dados de cliente nele, ver `.gitignore`); todo `git push` na branch
+`master` atualiza o app no ar. Repositório precisou ser público porque, com repositório
+privado, o Streamlit Community Cloud exige login do visitante para ver o app — não tem
+opção gratuita de "link público, código privado".
+
+**Como rodar localmente (alternativa):**
 
 ```bash
 pip install -r requirements.txt
@@ -148,8 +156,17 @@ streamlit run app.py
 ```
 
 Depois é só abrir `http://localhost:8501`, subir um PDF de apuração do Simples
-Nacional e baixar o resumo gerado. Uso é local, na máquina de quem for gerar o
-resumo — sem hospedagem/produção por enquanto.
+Nacional e baixar o resumo gerado.
+
+**Hardening feito para rodar em produção (04/08/2026):** como o app agora fica no ar
+recebendo uso repetido de várias pessoas, e não só uso local pontual, revisei e corrigi:
+- `app.py` só capturava `ValueError` ao ler o PDF enviado — um PDF corrompido, com
+  senha, ou que não é PDF de verdade gerava uma exceção não tratada (stack trace cru na
+  tela). Agora qualquer erro de leitura cai numa mensagem amigável.
+- O contorno do bug do Windows em `generate.py` (`delete=False` nos temporários do
+  xhtml2pdf) nunca apagava os arquivos depois. Rodando local isso era irrelevante; num
+  servidor contínuo, cada PDF gerado deixava ~6 arquivos temporários para trás para
+  sempre. Agora limpa após cada geração.
 
 **Observação sobre a pasta `samples/`:** contém os 3 relatórios reais usados para
 validar o parser. Como trazem dados sigilosos de clientes (CNPJ, receita, folha), não
@@ -202,9 +219,9 @@ Achei e corrigi dois pontos reais:
 - Geração de 1 resumo por competência/cliente, que passa por revisão humana do
   colaborador da Everest antes de ser enviado ao cliente (o app não envia nada
   diretamente)
-- Interface simples, **uso interno da Everest apenas** — não há, por enquanto, plano
-  de colocar isso em produção/hospedar externamente; roda local, na máquina de quem
-  for usar
+- Interface simples, **uso interno da Everest apenas** — hospedada (ver seção "App
+  hospedado" acima), mas sem senha; pensada para a equipe usar, não para divulgação
+  ampla
 
 ## Fora de escopo (por ora)
 
@@ -212,7 +229,7 @@ Achei e corrigi dois pontos reais:
 - Acesso direto do cliente à ferramenta
 - Suporte a outros relatórios (declaração anual/DEFIS) — considerar depois
 - Dashboard ou histórico consolidado por cliente
-- Deploy/produção — ferramenta de uso interno local por enquanto
+- Autenticação/senha no app — avaliar se vira necessário mais pra frente
 
 ## Riscos e pontos de atenção
 
