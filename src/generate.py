@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import io
 import tempfile
+from collections import Counter
 from pathlib import Path
 
 import xhtml2pdf.files as _x2p_files
@@ -89,6 +90,17 @@ def _consolidar_tributos(apuracao: ApuracaoSimplesNacional) -> list[dict]:
 
 
 def _contexto_anexos(apuracao: ApuracaoSimplesNacional) -> list[dict]:
+    # Empresas com mais de um estabelecimento (matriz/filial), ou mais de um
+    # anexo com o mesmo nome (ex.: dois blocos de Anexo III com tratamento de
+    # ISS diferente), fazem o mesmo "nome" de anexo aparecer repetido na
+    # tabela sem nenhuma distinção. Quando isso acontece, mostramos um
+    # detalhe extra por linha -- o CNPJ do estabelecimento (se houver mais de
+    # um) e/ou o texto da "Tabela" do próprio relatório (não reescrevemos essa
+    # descrição com palavras nossas, pois o que diferencia os blocos varia
+    # por anexo/situação e não dá pra prever de antemão).
+    cnpjs_distintos = len({a.estabelecimento_cnpj for a in apuracao.anexos if a.estabelecimento_cnpj})
+    contagem_nomes = Counter(a.nome for a in apuracao.anexos)
+
     contexto = []
     for a in apuracao.anexos:
         tendencia_classe = ""
@@ -101,9 +113,17 @@ def _contexto_anexos(apuracao: ApuracaoSimplesNacional) -> list[dict]:
             elif a.aliquota_proximo_periodo < a.aliquota_efetiva - 0.005:
                 tendencia_classe = "tendencia-baixa"
                 aliquota_proximo_fmt = f"▼ {aliquota_proximo_fmt}"
+
+        detalhes = []
+        if cnpjs_distintos > 1 and a.estabelecimento_cnpj:
+            detalhes.append(f"CNPJ {a.estabelecimento_cnpj}")
+        if contagem_nomes[a.nome] > 1 and a.tabela:
+            detalhes.append(a.tabela)
+
         contexto.append(
             {
                 "nome": a.nome,
+                "detalhe": " · ".join(detalhes),
                 "receita_tributada_fmt": fmt_brl(a.receita_tributada),
                 "aliquota_efetiva_fmt": fmt_pct(a.aliquota_efetiva),
                 "simples_nacional_total_fmt": fmt_brl(a.simples_nacional_total),

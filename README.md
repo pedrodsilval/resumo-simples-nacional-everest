@@ -168,9 +168,23 @@ recebendo uso repetido de várias pessoas, e não só uso local pontual, revisei
   servidor contínuo, cada PDF gerado deixava ~6 arquivos temporários para trás para
   sempre. Agora limpa após cada geração.
 
-**Observação sobre a pasta `samples/`:** contém os 3 relatórios reais usados para
-validar o parser. Como trazem dados sigilosos de clientes (CNPJ, receita, folha), não
-devem ser compartilhados fora desta máquina/projeto.
+**Correção: empresas com matriz e filial (10/08/2026):** a equipe reportou (relatório
+real de um cliente) que o site não reconhecia o PDF de uma empresa com mais de um
+estabelecimento (matriz + filial, cada um com seu CNPJ, apurados juntos no mesmo
+relatório). Duas causas, corrigidas:
+- Quando a apuração tem muitos blocos de Anexo (comum com mais de um estabelecimento),
+  o rodapé com o total ("Simples Nacional a recolher") transborda para uma página
+  seguinte, que o parser não olhava — só lia a primeira página da apuração. Agora junta
+  todas as páginas antes de extrair os dados.
+- Com mais de um estabelecimento, o mesmo Anexo pode aparecer repetido na tabela do
+  resumo com valores diferentes e nenhuma explicação (ex.: "Anexo III" três vezes). Agora
+  cada linha agora mostra o CNPJ do estabelecimento (quando há mais de um) e o texto da
+  "Tabela" do próprio relatório como diferencial, sempre que o nome do anexo sozinho não
+  for suficiente para distinguir as linhas.
+
+**Observação sobre a pasta `samples/`:** contém os relatórios reais usados para validar
+o parser. Como trazem dados sigilosos de clientes (CNPJ, receita, folha), não devem ser
+compartilhados fora desta máquina/projeto.
 
 **Limitações conhecidas do protótipo:**
 

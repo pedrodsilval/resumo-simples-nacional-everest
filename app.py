@@ -12,7 +12,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from formatting import fmt_brl, fmt_pct, fmt_periodo_extenso  # noqa: E402
-from generate import _consolidar_tributos, gerar_pdf_bytes  # noqa: E402
+from generate import _consolidar_tributos, _contexto_anexos, gerar_pdf_bytes  # noqa: E402
 from parser import parse_relatorio  # noqa: E402
 
 st.set_page_config(page_title="Resumo Simples Nacional - Everest", page_icon="📄")
@@ -67,15 +67,13 @@ if arquivo is not None:
         st.table(
             [
                 {
-                    "Anexo": a.nome,
-                    "Receita tributada": fmt_brl(a.receita_tributada),
-                    "Alíquota efetiva": fmt_pct(a.aliquota_efetiva),
-                    "Valor do Simples": fmt_brl(a.simples_nacional_total),
-                    "Próx. período": fmt_pct(a.aliquota_proximo_periodo)
-                    if a.aliquota_proximo_periodo is not None
-                    else "-",
+                    "Anexo": a["nome"] + (f" ({a['detalhe']})" if a["detalhe"] else ""),
+                    "Receita tributada": a["receita_tributada_fmt"],
+                    "Alíquota efetiva": a["aliquota_efetiva_fmt"],
+                    "Valor do Simples": a["simples_nacional_total_fmt"],
+                    "Próx. período": a["aliquota_proximo_fmt"],
                 }
-                for a in apuracao.anexos
+                for a in _contexto_anexos(apuracao)
             ]
         )
 

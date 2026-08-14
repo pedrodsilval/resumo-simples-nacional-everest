@@ -166,6 +166,12 @@
         font-family: "SatoshiBold";
         color: #1A4FAD;
     }
+    .anexo-detalhe {
+        font-family: "InterRegular";
+        font-size: 7.5pt;
+        color: #6b6b85;
+        margin-top: 2px;
+    }
     .tendencia-alta {
         font-family: "InterSemiBold";
         color: #D94F2B;
@@ -263,7 +269,10 @@
 </tr>
 {% for a in anexos %}
 <tr>
-    <td>{{ a.nome }}</td>
+    <td>
+        {{ a.nome }}
+        {% if a.detalhe %}<div class="anexo-detalhe">{{ a.detalhe }}</div>{% endif %}
+    </td>
     <td class="num">{{ a.receita_tributada_fmt }}</td>
     <td class="num aliquota-destaque">{{ a.aliquota_efetiva_fmt }}</td>
     <td class="num">{{ a.simples_nacional_total_fmt }}</td>

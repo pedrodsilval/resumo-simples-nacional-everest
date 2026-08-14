@@ -76,6 +76,7 @@ class Anexo:
     descricao_completa: str
     secao: str
     tabela: str
+    estabelecimento_cnpj: str
     receita_tributada: float
     aliquota_efetiva: float
     simples_nacional_total: float
@@ -146,8 +147,31 @@ def _split_pages_by_tipo(pdf_path: str) -> dict[str, list[str]]:
     return grupos
 
 
+_ESTABELECIMENTO_RE = re.compile(r"Estabelecimento:\s*\d+\s+.+?CNPJ:\s*([\d./-]+)")
+
+
 def _parse_anexo_blocks(text: str, with_proximo: bool = False) -> list[Anexo]:
-    """Extrai os blocos 'Anexo: ... Tabela: ...' de uma página de apuração."""
+    """Extrai todos os blocos 'Anexo: ... Tabela: ...' de uma página de
+    apuração, agrupados por 'Estabelecimento:' -- empresas com matriz e
+    filial (ou mais de um estabelecimento) repetem o bloco 'Estabelecimento:
+    NN ... CNPJ: X' antes dos anexos de cada um. Sem separar por
+    estabelecimento primeiro, dois anexos idênticos de estabelecimentos
+    diferentes ficam indistinguíveis no resumo.
+    """
+    anexos: list[Anexo] = []
+    pedacos_estabelecimento = re.split(r"(?=Estabelecimento:\s*\d+\s)", text)
+    for pedaco in pedacos_estabelecimento:
+        m_estab = _ESTABELECIMENTO_RE.search(pedaco)
+        cnpj_estab = m_estab.group(1).strip() if m_estab else ""
+        anexos.extend(_parse_anexo_blocks_do_estabelecimento(pedaco, cnpj_estab, with_proximo))
+    return anexos
+
+
+def _parse_anexo_blocks_do_estabelecimento(
+    text: str, cnpj_estab: str, with_proximo: bool = False
+) -> list[Anexo]:
+    """Extrai os blocos 'Anexo: ... Tabela: ...' dentro do texto de um único
+    estabelecimento (ver `_parse_anexo_blocks`)."""
     blocos_raw = re.split(r"(?=Anexo:\s)", text)
     anexos: list[Anexo] = []
 
@@ -192,6 +216,7 @@ def _parse_anexo_blocks(text: str, with_proximo: bool = False) -> list[Anexo]:
                     descricao_completa=nome,
                     secao=secao,
                     tabela=tabela,
+                    estabelecimento_cnpj=cnpj_estab,
                     receita_tributada=0.0,
                     aliquota_efetiva=0.0,
                     simples_nacional_total=0.0,
@@ -284,6 +309,7 @@ def _parse_anexo_blocks(text: str, with_proximo: bool = False) -> list[Anexo]:
                 descricao_completa=nome,
                 secao=secao,
                 tabela=tabela,
+                estabelecimento_cnpj=cnpj_estab,
                 receita_tributada=receita_tributada,
                 aliquota_efetiva=aliquota_efetiva,
                 simples_nacional_total=simples_nacional_total,
@@ -367,10 +393,10 @@ def _aplicar_periodo_seguinte(apuracao: ApuracaoSimplesNacional, textos: list[st
     # O relatório repete o bloco de um anexo quando ele ocupa mais de uma
     # página (ex.: página 2/2 reimprime o último anexo da página 1/2) --
     # deduplicamos por (nome, tabela) mantendo a primeira ocorrência.
-    vistos: set[tuple[str, str]] = set()
+    vistos: set[tuple[str, str, str]] = set()
     anexos_proximo: list[Anexo] = []
     for a in anexos_proximo_bruto:
-        chave = (a.nome, a.tabela)
+        chave = (a.estabelecimento_cnpj, a.nome, a.tabela)
         if chave in vistos:
             continue
         vistos.add(chave)
@@ -393,6 +419,12 @@ def parse_relatorio(pdf_path: str) -> ApuracaoSimplesNacional:
             "Confirme se é o relatório de apuração do Simples Nacional."
         )
 
-    apuracao = _parse_apuracao_page(grupos["apuracao"][0])
+    # Empresas com mais de um estabelecimento (matriz + filial) ou vários
+    # anexos podem ter a apuração espalhada por mais de uma página -- os
+    # blocos de Anexo ficam nas primeiras páginas e o rodapé (Outros
+    # Acréscimos/Deduções, Simples Nacional a recolher) só cabe na última.
+    # Juntamos todas as páginas de apuração antes de parsear.
+    texto_apuracao = "\n".join(grupos["apuracao"])
+    apuracao = _parse_apuracao_page(texto_apuracao)
     _aplicar_periodo_seguinte(apuracao, grupos["periodo_seguinte"])
     return apuracao
