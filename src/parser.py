@@ -321,11 +321,37 @@ def _parse_anexo_blocks_do_estabelecimento(
     return anexos
 
 
-def _parse_apuracao_page(text: str) -> ApuracaoSimplesNacional:
+def _extrair_cabecalho_memoria(texto_memoria: str) -> tuple[str | None, str | None, str | None]:
+    """Extrai empresa/CNPJ/período do cabeçalho da página 'Memória de Cálculo'.
+
+    Usado como fallback: quando o nome da empresa é muito longo, ele se
+    sobrepõe fisicamente ao rótulo "Página:" no cabeçalho da página de
+    apuração, e o pdfplumber intercala os caracteres dos dois textos
+    sobrepostos (ex.: "TECNOLOGPI�Ag iLnTaD:A 0001"), tornando o valor
+    irrecuperável ali. O cabeçalho da página de memória de cálculo tem o
+    mesmo nome da empresa mas não sofre essa sobreposição.
+    """
+    m_empresa = re.search(r"^(.+?)\s+P.gina:", texto_memoria)
+    m_cnpj = re.search(r"CNPJ:\s*([\d./-]+)\s+Emiss.o:", texto_memoria)
+    m_periodo = re.search(r"Compet.ncia:\s*(\d{2}/\d{4})", texto_memoria)
+    return (
+        m_empresa.group(1).strip() if m_empresa else None,
+        m_cnpj.group(1).strip() if m_cnpj else None,
+        m_periodo.group(1).strip() if m_periodo else None,
+    )
+
+
+def _parse_apuracao_page(text: str, texto_memoria: str = "") -> ApuracaoSimplesNacional:
     m_empresa = re.search(r"Empresa:\s*(.+?)\s+P.gina:", text)
     m_cnpj = re.search(r"CNPJ:\s*([\d./-]+)\s+Emiss.o:", text)
     m_inicio = re.search(r"In.cio das atividades:\s*(\d{2}/\d{2}/\d{4})", text)
     m_periodo = re.search(r"\nPer.odo:\s*(\d{2}/\d{4})", text)
+
+    empresa_fallback = cnpj_fallback = periodo_fallback = None
+    if texto_memoria and not (m_empresa and m_cnpj and m_periodo):
+        empresa_fallback, cnpj_fallback, periodo_fallback = _extrair_cabecalho_memoria(
+            texto_memoria
+        )
 
     m_rpa_comp = re.search(
         r"Regime de Compet.ncia\s+([\d.,]+)\s+[\d.,]+\s+([\d.,]+)", text
@@ -347,7 +373,11 @@ def _parse_apuracao_page(text: str) -> ApuracaoSimplesNacional:
     m_iss = re.search(r"Valor Fixo ISS:\s*([\d.,]+)", text)
     m_total = re.search(r"Simples Nacional a recolher:\s*([\d.,]+)", text)
 
-    if not (m_empresa and m_cnpj and m_periodo and m_total):
+    empresa = m_empresa.group(1).strip() if m_empresa else empresa_fallback
+    cnpj = m_cnpj.group(1).strip() if m_cnpj else cnpj_fallback
+    periodo = m_periodo.group(1).strip() if m_periodo else periodo_fallback
+
+    if not (empresa and cnpj and periodo and m_total):
         raise ValueError(
             "Não foi possível identificar os campos básicos (empresa/CNPJ/período/total) "
             "nesta página. O layout pode ser diferente do esperado."
@@ -356,9 +386,9 @@ def _parse_apuracao_page(text: str) -> ApuracaoSimplesNacional:
     anexos = _parse_anexo_blocks(text, with_proximo=False)
 
     return ApuracaoSimplesNacional(
-        empresa=m_empresa.group(1).strip(),
-        cnpj=m_cnpj.group(1).strip(),
-        periodo=m_periodo.group(1).strip(),
+        empresa=empresa,
+        cnpj=cnpj,
+        periodo=periodo,
         inicio_atividades=m_inicio.group(1).strip() if m_inicio else "",
         rpa_competencia=parse_brl(m_rpa_comp.group(2)) if m_rpa_comp else 0.0,
         rpa_caixa=parse_brl(m_rpa_caixa.group(2)) if m_rpa_caixa else None,
@@ -425,6 +455,7 @@ def parse_relatorio(pdf_path: str) -> ApuracaoSimplesNacional:
     # Acréscimos/Deduções, Simples Nacional a recolher) só cabe na última.
     # Juntamos todas as páginas de apuração antes de parsear.
     texto_apuracao = "\n".join(grupos["apuracao"])
-    apuracao = _parse_apuracao_page(texto_apuracao)
+    texto_memoria = "\n".join(grupos["memoria"])
+    apuracao = _parse_apuracao_page(texto_apuracao, texto_memoria)
     _aplicar_periodo_seguinte(apuracao, grupos["periodo_seguinte"])
     return apuracao
